@@ -1,53 +1,28 @@
-# New Project Template
+# Load balancing utilities
 
-This repository contains a template that can be used to seed a repository for a
-new Google open source project.
+Utilities for load balancing of scale out storage solutions, such as the [knsfd NFS proxy](https://github.com/GoogleCloudPlatform/knfsd-cache-utils).
 
-See [go/releasing](http://go/releasing) (available externally at
-https://opensource.google/documentation/reference/releasing) for more information about
-releasing a new Google open source project.
+## vip_manager
+VIP Manager is a utility to manage virtual ("[alias](https://cloud.google.com/vpc/docs/alias-ip)") IPs for instances in a [Managed Instance Group](https://cloud.google.com/compute/docs/instance-groups). Virtual IPs are distributed in an even way between all the nodes in the instance group. When the number of nodes changes, Virtual IPs are automatically re-balanced.
 
-This template uses the Apache license, as is Google's default.  See the
-documentation for instructions on using alternate license.
+### Build
+```go build vip_manager.go```
 
-## How to use this template
-
-1. Clone it from GitHub.
-    * There is no reason to fork it.
-1. Create a new local repository and copy the files from this repo into it.
-1. Modify README.md and docs/contributing.md to represent your project, not the
-   template project.
-1. Develop your new project!
-
-``` shell
-git clone https://github.com/google/new-project
-mkdir my-new-thing
-cd my-new-thing
-git init
-cp -r ../new-project/* ../new-project/.github .
-git add *
-git commit -a -m 'Boilerplate for new Google open source project'
+### Run
+```
+vip_manager \
+  -project PROJECT \
+  -zone GCE_ZONE \
+  -gce_instance_group INSTANCE_GROUP_NAME \
+  -alias_network NAME_OF_ALIAS_NETWORK \
+  -vips NETWORK_PREFIX
 ```
 
-## Source Code Headers
+Replace works in ALL_CAPS with values for your environment.
 
-Every file containing source code must include copyright and license
-information. This includes any JS/CSS files that you might be serving out to
-browsers. (This is to help well-intentioned people avoid accidental copying that
-doesn't comply with the license.)
+Project and GCE zone are auto configured inside [Google Cloud Platform](https://cloud.google.com) ([GCE](https://cloud.google.com/compute) or [GKE](https://cloud.google.com/kubernetes-engine)).
 
-Apache header:
-
-    Copyright 2022 Google LLC
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-        https://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
+### Permissions
+vip_manager needs permissions to:
+1. List GCE instances and instance groups.
+2. Add and remove alias IPs to/from GCE instances.
