@@ -21,6 +21,7 @@ import (
 	"os"
 	"strings"
 
+	"cloud.google.com/go/compute/metadata"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/compute/v1"
 )
@@ -78,7 +79,7 @@ func ChooseZone(cfg *GcpConfig) {
 	if cfg.Zone != "" {
 		return
 	}
-	// TODO(leffler): Auto detect zone in GCP.
+	cfg.Zone, _ = metadata.Zone()
 }
 
 func ListInstanceGroups(cfg *GcpConfig) (names []string, err error) {
