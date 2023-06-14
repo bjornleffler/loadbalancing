@@ -27,7 +27,7 @@ vip_manager needs permissions to:
 1. List GCE instances and instance groups.
 2. Add and remove alias IPs to/from GCE instances.
 
-One way to allow vip_manager to run inside a VM in GCE/GKE is to grant the "Compute Instance Admin (v1)" role to the GCE service account (PROJECT_NUMBER@project.gserviceaccount.com).
+These permissions are not included in "Compute Engine Read Write" nor "Allow full access to all Cloud APIs" when creating a VM. One way to allow vip_manager to run inside a VM in GCE/GKE is to grant the "Compute Instance Admin (v1)" role to the GCE service account (PROJECT_NUMBER@project.gserviceaccount.com).
 
 (TODO: Figure out a better way)
 
