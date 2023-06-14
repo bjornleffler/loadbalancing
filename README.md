@@ -26,3 +26,22 @@ Project and GCE zone are auto configured inside [Google Cloud Platform](https://
 vip_manager needs permissions to:
 1. List GCE instances and instance groups.
 2. Add and remove alias IPs to/from GCE instances.
+
+## metrics_exporter
+Metrics Exporter is a utility to export system metrics for load balancing, for example to load balance connections based on current NFS connections.
+
+### Build
+```go build metrics_exporter.go```
+
+### Run
+```
+metrics_exporter [-p PORT]
+```
+
+The default port is 9001.
+
+### Manual test
+```
+curl http://IP:PORT/metrics
+```
+Replace IP and PORT.
