@@ -17,6 +17,7 @@ package main
 // Metrics Exporter exports prometheus metrics to facilitate advanced load balancing.
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net"
@@ -34,45 +35,46 @@ import (
 )
 
 const (
-	prefix   = "metrics_exporter_"
-	nfs4Port = 2049
+	Prefix      = "metrics_exporter_"
+	Nfs4Port    = 2049
+	DefaultPort = 9001
 )
 
 var (
 	cpuUsagePercent = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: prefix + "cpu_usage_percent",
+		Name: Prefix + "cpu_usage_percent",
 		Help: "CPU usage in percent.",
 	})
 	memoryUsagePercent = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: prefix + "memory_usage_percent",
+		Name: Prefix + "memory_usage_percent",
 		Help: "Memory usage in percent.",
 	})
 	systemLoad = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: prefix + "system_load",
+		Name: Prefix + "system_load",
 		Help: "System load (number of waiting threads).",
 	})
 	ingressTcpTotal = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: prefix + "ingress_tcp_connections_total",
+		Name: Prefix + "ingress_tcp_connections_total",
 		Help: "Total number of ingress TCP connections.",
 	})
 	egressTcpTotal = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: prefix + "egress_tcp_connections_total",
+		Name: Prefix + "egress_tcp_connections_total",
 		Help: "Total number of egress TCP connections.",
 	})
 	ingressTcpByPort = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: prefix + "ingress_tcp_connections_by_port",
+		Name: Prefix + "ingress_tcp_connections_by_port",
 		Help: "Total number of ingress TCP connections, per port",
 	}, []string{"port"})
 	egressTcpByPort = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: prefix + "egress_tcp_connections_by_port",
+		Name: Prefix + "egress_tcp_connections_by_port",
 		Help: "Number of egress TCP connections, per port.",
 	}, []string{"port"})
 	nfsConnections = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: prefix + "nfs_connections_total",
+		Name: Prefix + "nfs_connections_total",
 		Help: "Total number of inbound NFS TCP connections.",
 	})
 	nfs4Connections = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: prefix + "nfs_v4_connections_total",
+		Name: Prefix + "nfs_v4_connections_total",
 		Help: "Total number of inbound NFSv4 TCP connections.",
 	})
 )
@@ -206,7 +208,7 @@ func exportMetrics() {
 			}
 			ingressTcpTotal.Set(float64(ingressTotal))
 			egressTcpTotal.Set(float64(egressTotal))
-			nfs4 := float64(ingress[nfs4Port])
+			nfs4 := float64(ingress[Nfs4Port])
 			nfs4Connections.Set(nfs4)
 			nfsConnections.Set(nfs4)
 
@@ -216,8 +218,13 @@ func exportMetrics() {
 }
 
 func main() {
-	log.Printf("Start Metrics Exporter")
+	port := DefaultPort
+	fs := flag.CommandLine
+	fs.IntVar(&port, "p", DefaultPort, "TCP port for metrics export.")
+	flag.Parse()
+	log.Printf("Start Metrics Exporter on port %d", port)
 	exportMetrics()
 	http.Handle("/metrics", promhttp.Handler())
-	http.ListenAndServe(":2112", nil)
+	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	log.Printf("Failed to start Metrics Exporter: %v", err)
 }
