@@ -16,6 +16,10 @@ package main
 
 // Metrics Exporter exports prometheus metrics to facilitate advanced load balancing.
 
+// This is currently mostly useless, as the kernel NFS server doesn't report the
+// number of connections. This makes NFS session balancing impossible with the
+// kernel NFS server.
+
 import (
 	"flag"
 	"fmt"
@@ -35,8 +39,8 @@ import (
 )
 
 const (
-	Prefix      = "metrics_exporter_"
-	Nfs4Port    = 2049
+	Prefix = "metrics_exporter_"
+	// Nfs4Port    = 2049
 	DefaultPort = 9001
 )
 
@@ -69,14 +73,14 @@ var (
 		Name: Prefix + "egress_tcp_connections_by_port",
 		Help: "Number of egress TCP connections, per port.",
 	}, []string{"port"})
-	nfsConnections = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: Prefix + "nfs_connections_total",
-		Help: "Total number of inbound NFS TCP connections.",
-	})
-	nfs4Connections = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: Prefix + "nfs_v4_connections_total",
-		Help: "Total number of inbound NFSv4 TCP connections.",
-	})
+	// nfsConnections = promauto.NewGauge(prometheus.GaugeOpts{
+	//	Name: Prefix + "nfs_connections_total",
+	//	Help: "Total number of inbound NFS TCP connections.",
+	//})
+	//nfs4Connections = promauto.NewGauge(prometheus.GaugeOpts{
+	//	Name: Prefix + "nfs_v4_connections_total",
+	//	Help: "Total number of inbound NFSv4 TCP connections.",
+	//})
 )
 
 func getCPUPercent() (float64, error) {
@@ -208,9 +212,9 @@ func exportMetrics() {
 			}
 			ingressTcpTotal.Set(float64(ingressTotal))
 			egressTcpTotal.Set(float64(egressTotal))
-			nfs4 := float64(ingress[Nfs4Port])
-			nfs4Connections.Set(nfs4)
-			nfsConnections.Set(nfs4)
+			//nfs4 := float64(ingress[Nfs4Port])
+			//nfs4Connections.Set(nfs4)
+			//nfsConnections.Set(nfs4)
 
 			time.Sleep(15 * time.Second)
 		}
