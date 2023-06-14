@@ -49,3 +49,30 @@ The default port is 9001.
 curl http://IP:PORT/metrics
 ```
 Replace IP and PORT.
+
+# Load balancing with Cloud DNS
+
+Once vip_manager is set up and managing the virtual IPs, a simple way to orchestrate random ("round robin") DNS is using Google Cloud DNS.
+
+### Create a new private zone
+
+![Create private zone](https://github.com/bjornleffler/loadbalancing/assets/10503899/c203498f-9234-43ab-a8ab-1c3367f534dc)
+
+### Click "Create" then "Add Standard"
+
+![Add Standard](https://github.com/bjornleffler/loadbalancing/assets/10503899/2b6aa75d-d45c-4d23-b124-2800f22d5061)
+
+### Add all the IPs in the virtual IP network prefix.
+Example with the 10.9.8.0/30 prefix:
+
+![Add Ips](https://github.com/bjornleffler/loadbalancing/assets/10503899/de7c9e1d-b81f-47c2-a329-cafeebe220a9)
+
+Virtual machines in the designated network can now query the new DNS zone.
+
+```
+# host myservice.loadbalancing.mydomain.com
+myservice.loadbalancing.mydomain.com has address 10.9.8.3
+myservice.loadbalancing.mydomain.com has address 10.9.8.1
+myservice.loadbalancing.mydomain.com has address 10.9.8.0
+myservice.loadbalancing.mydomain.com has address 10.9.8.2
+```
