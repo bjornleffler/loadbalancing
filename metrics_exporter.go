@@ -16,10 +16,6 @@ package main
 
 // Metrics Exporter exports prometheus metrics to facilitate advanced load balancing.
 
-// This is currently mostly useless, as the kernel NFS server doesn't report the
-// number of connections. This makes NFS session balancing impossible with the
-// kernel NFS server.
-
 import (
 	"flag"
 	"fmt"
@@ -39,8 +35,8 @@ import (
 )
 
 const (
-	Prefix = "metrics_exporter_"
-	// Nfs4Port    = 2049
+	Prefix      = "metrics_exporter_"
+	Nfs4Port    = 2049
 	DefaultPort = 9001
 )
 
@@ -73,14 +69,10 @@ var (
 		Name: Prefix + "egress_tcp_connections_by_port",
 		Help: "Number of egress TCP connections, per port.",
 	}, []string{"port"})
-	// nfsConnections = promauto.NewGauge(prometheus.GaugeOpts{
-	//	Name: Prefix + "nfs_connections_total",
-	//	Help: "Total number of inbound NFS TCP connections.",
-	//})
-	//nfs4Connections = promauto.NewGauge(prometheus.GaugeOpts{
-	//	Name: Prefix + "nfs_v4_connections_total",
-	//	Help: "Total number of inbound NFSv4 TCP connections.",
-	//})
+	nfs4Connections = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: Prefix + "nfs_v4_connections_total",
+		Help: "Total number of inbound NFSv4 TCP connections.",
+	})
 )
 
 func getCPUPercent() (float64, error) {
@@ -175,6 +167,8 @@ func getTcpCounts() (ingress, egress map[uint16]int64, err error) {
 
 func exportMetrics() {
 	go func() {
+		allIngressPorts := make(map[string]struct{})
+		allEgressPorts := make(map[string]struct{})
 		for {
 			cpu, err := getCPUPercent()
 			if err != nil {
@@ -197,24 +191,32 @@ func exportMetrics() {
 			// TCP connections.
 			ingress, egress, err := getTcpCounts()
 			if err != nil {
-				log.Printf("Error getting Load value: %v", err)
+				log.Printf("Error getting TCP session count: %v", err)
+			}
+			// Reset counts, for values that just went to 0.
+			for port, _ := range allIngressPorts {
+				ingressTcpByPort.WithLabelValues(port).Set(0)
+			}
+			for port, _ := range allEgressPorts {
+				egressTcpByPort.WithLabelValues(port).Set(0)
 			}
 			ingressTotal, egressTotal := 0, 0
 			for k, v := range ingress {
 				ingressTotal += 1
 				port := strconv.FormatUint(uint64(k), 10)
+				allIngressPorts[port] = struct{}{}
 				ingressTcpByPort.WithLabelValues(port).Set(float64(v))
 			}
 			for k, v := range egress {
 				egressTotal += 1
 				port := strconv.FormatUint(uint64(k), 10)
+				allEgressPorts[port] = struct{}{}
 				egressTcpByPort.WithLabelValues(port).Set(float64(v))
 			}
 			ingressTcpTotal.Set(float64(ingressTotal))
 			egressTcpTotal.Set(float64(egressTotal))
-			//nfs4 := float64(ingress[Nfs4Port])
-			//nfs4Connections.Set(nfs4)
-			//nfsConnections.Set(nfs4)
+			nfs4 := float64(ingress[Nfs4Port])
+			nfs4Connections.Set(nfs4)
 
 			time.Sleep(15 * time.Second)
 		}
