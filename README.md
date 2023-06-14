@@ -27,6 +27,10 @@ vip_manager needs permissions to:
 1. List GCE instances and instance groups.
 2. Add and remove alias IPs to/from GCE instances.
 
+One way to allow vip_manager to run inside a VM in GCE/GKE is to grant the "Compute Instance Admin (v1)" role to the GCE service account (PROJECT_NUMBER@project.gserviceaccount.com).
+
+(TODO: Figure out a better way)
+
 ## metrics_exporter
 Metrics Exporter is a utility to export system metrics for load balancing, for example to load balance connections based on current NFS connections.
 
