@@ -130,7 +130,11 @@ func PrintInstances(cfg *Config) {
 	}
 	log.Printf("Current state:")
 	for name, instance := range instances {
-		log.Printf(" - Instance: %s ips: %v", name, *instance.AliasIps)
+		log.Printf(" - Instance: %s", name)
+		log.Printf("   ips: %v", *instance.AliasIps)
+		for _, network := range instance.OtherNetworks {
+			log.Printf("   other network name: %s cidr: %s", network.Name, network.Cidr)
+		}
 	}
 }
 

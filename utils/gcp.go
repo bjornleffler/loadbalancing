@@ -45,6 +45,12 @@ type GceInstance struct {
 	NetworkFingerprint string
 	AliasNetwork       string
 	AliasIps           *[]string
+	OtherNetworks      []Network
+}
+
+type Network struct {
+	Name string
+	Cidr string
 }
 
 func ConnectCompute() {
@@ -130,13 +136,23 @@ func GetInstance(cfg *GcpConfig, name string) (*GceInstance, error) {
 		instance.NetworkInterface = i.Name
 		instance.NetworkFingerprint = i.Fingerprint
 		for _, alias := range i.AliasIpRanges {
-			instance.AliasNetwork = alias.SubnetworkRangeName
-			ips, err := ExpandNetworkPrefix(alias.IpCidrRange)
-			if err != nil {
-				log.Printf("Failed to expand network prefix: %v", err)
-			}
-			for _, ip := range ips {
-				*instance.AliasIps = append(*instance.AliasIps, ip.String())
+			if alias.SubnetworkRangeName == cfg.AliasNetwork {
+				// Manage our alias network.
+				instance.AliasNetwork = alias.SubnetworkRangeName
+				ips, err := ExpandNetworkPrefix(alias.IpCidrRange)
+				if err != nil {
+					log.Printf("Failed to expand network prefix: %v", err)
+				}
+				for _, ip := range ips {
+					*instance.AliasIps = append(*instance.AliasIps, ip.String())
+				}
+			} else {
+				// Track other alias networks.
+				network := Network{
+					Name: alias.SubnetworkRangeName,
+					Cidr: alias.IpCidrRange,
+				}
+				instance.OtherNetworks = append(instance.OtherNetworks, network)
 			}
 		}
 	}
@@ -167,6 +183,12 @@ func UpdateAliasIPs(cfg *GcpConfig, instance *GceInstance, ips []string) error {
 		ipRanges = append(ipRanges, &compute.AliasIpRange{
 			IpCidrRange:         ip + "/32",
 			SubnetworkRangeName: cfg.AliasNetwork,
+		})
+	}
+	for _, network := range instance.OtherNetworks {
+		ipRanges = append(ipRanges, &compute.AliasIpRange{
+			IpCidrRange:         network.Cidr,
+			SubnetworkRangeName: network.Name,
 		})
 	}
 	rb := &compute.NetworkInterface{
