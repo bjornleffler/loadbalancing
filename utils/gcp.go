@@ -179,16 +179,20 @@ func GetInstancesFromMIG(cfg *GcpConfig) (map[string]*GceInstance, error) {
 
 func UpdateAliasIPs(cfg *GcpConfig, instance *GceInstance, ips []string) error {
 	ipRanges := []*compute.AliasIpRange{}
-	for _, ip := range ips {
-		ipRanges = append(ipRanges, &compute.AliasIpRange{
-			IpCidrRange:         ip + "/32",
-			SubnetworkRangeName: cfg.AliasNetwork,
-		})
-	}
 	for _, network := range instance.OtherNetworks {
 		ipRanges = append(ipRanges, &compute.AliasIpRange{
 			IpCidrRange:         network.Cidr,
 			SubnetworkRangeName: network.Name,
+		})
+	}
+	for _, ip := range ips {
+		if len(ipRanges) == 100 {
+			// Respect per GCE VM limit of 100 alias networks.
+			break
+		}
+		ipRanges = append(ipRanges, &compute.AliasIpRange{
+			IpCidrRange:         ip + "/32",
+			SubnetworkRangeName: cfg.AliasNetwork,
 		})
 	}
 	rb := &compute.NetworkInterface{
